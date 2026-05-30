@@ -1,0 +1,12 @@
+<svg width="180" height="50" viewBox="0 0 180 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Icon mark -->
+  <rect x="0" y="4" width="34" height="34" rx="9" fill="#5F6FFF"/>
+  <path d="M17 11 C11 11 7 15 7 20 C7 25 11 27 14 27 L14 31 C14 31 9 29 6 24 C3 19 5 12 11 9 C14 7 17 7 17 7 Z" fill="white" opacity="0.9"/>
+  <path d="M17 11 C23 11 27 15 27 20 C27 25 23 27 20 27 L20 31 C20 31 25 29 28 24 C31 19 29 12 23 9 C20 7 17 7 17 7 Z" fill="white" opacity="0.6"/>
+  <circle cx="17" cy="20" r="3.5" fill="white"/>
+  <!-- Wordmark -->
+  <text x="44" y="26" font-family="'Segoe UI', system-ui, -apple-system, sans-serif" font-size="22" font-weight="700" letter-spacing="-0.5" fill="#1e2a6e">Dock</text>
+  <text x="100" y="26" font-family="'Segoe UI', system-ui, -apple-system, sans-serif" font-size="22" font-weight="700" letter-spacing="-0.5" fill="#5F6FFF">Rx</text>
+  <!-- Subtitle -->
+  <text x="44" y="40" font-family="'Segoe UI', system-ui, -apple-system, sans-serif" font-size="10" font-weight="500" letter-spacing="0.5" fill="#8892b0">Dashboard Panel</text>
+</svg>

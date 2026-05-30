@@ -71,7 +71,7 @@ const AddDoctor = () => {
     return (
         <form onSubmit={onSubmitHandler} className='m-6 w-full max-w-6xl'>
 
-            <p className='mb-6 text-2xl font-bold text-slate-800'>Register New Doctor</p>
+            <p className='mb-6 text-2xl font-bold text-slate-800'>Register New Doctor — DockRx</p>
 
             <div className='bg-white px-8 py-10 border border-slate-100 rounded-2xl shadow-sm w-full'>
                 <div className='flex items-center gap-6 mb-10 text-slate-500 group'>

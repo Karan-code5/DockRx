@@ -13,7 +13,7 @@ const connectDB = async () => {
         const maskedURI = process.env.MONGODB_URI ? process.env.MONGODB_URI.replace(/:([^@]+)@/, ':****@') : 'UNDEFINED';
         console.log(`Connecting to: ${maskedURI}`);
 
-        await mongoose.connect(`${process.env.MONGODB_URI}/karan-code5`, {
+        await mongoose.connect(`${process.env.MONGODB_URI}/DockRx`, {
             serverSelectionTimeoutMS: 5000,
         })
 

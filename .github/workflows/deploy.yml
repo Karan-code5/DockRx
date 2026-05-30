@@ -1,38 +1,33 @@
-name: 🚀 Deploy DockRx — Full Stack
+name: 🚀 Deploy DockRx — Cloudflare Only
 
-# ─────────────────────────────────────────────────────────────────────
-# TRIGGERS: Runs on every push to main branch
-#           Can also be triggered manually from GitHub Actions tab
-# ─────────────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────
+# Runs on every push to main.
+# All three apps deploy to Cloudflare:
+#   Frontend  → Cloudflare Pages  (dockrx-frontend)
+#   Admin     → Cloudflare Pages  (dockrx-admin)
+#   Backend   → Cloudflare Workers (dockrx-backend)
+# ─────────────────────────────────────────────────────────────────
 on:
   push:
-    branches:
-      - main
-  workflow_dispatch:      # Allows manual trigger from GitHub UI
+    branches: [main]
+  workflow_dispatch:
     inputs:
       deploy_target:
         description: 'What to deploy'
         required: false
         default: 'all'
         type: choice
-        options:
-          - all
-          - frontend
-          - admin
-          - backend
+        options: [all, frontend, admin, backend]
 
-# ─────────────────────────────────────────────────────────────────────
-# CONCURRENCY: Cancel any in-progress deploy if a new push arrives
-# ─────────────────────────────────────────────────────────────────────
 concurrency:
   group: deploy-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
 
-  # ═══════════════════════════════════════════════════════════════════
-  # JOB 1 — DEPLOY PATIENT FRONTEND TO CLOUDFLARE PAGES
-  # ═══════════════════════════════════════════════════════════════════
+  # ═══════════════════════════════════════════════════════════════
+  # JOB 1 — FRONTEND → CLOUDFLARE PAGES
+  # ═══════════════════════════════════════════════════════════════
   deploy-frontend:
     name: 🌐 Frontend → Cloudflare Pages
     runs-on: ubuntu-latest
@@ -42,11 +37,9 @@ jobs:
       github.event.inputs.deploy_target == 'frontend'
 
     steps:
-      # 1. Pull source code
-      - name: ⬇️ Checkout repository
+      - name: ⬇️ Checkout code
         uses: actions/checkout@v4
 
-      # 2. Set up Node.js with caching
       - name: 🟢 Setup Node.js 20
         uses: actions/setup-node@v4
         with:
@@ -54,41 +47,33 @@ jobs:
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
 
-      # 3. Install dependencies
       - name: 📦 Install dependencies
         working-directory: ./frontend
         run: npm ci
 
-      # 4. Build the React app (injects env vars at build time)
-      - name: 🔨 Build frontend
+      - name: 🔨 Build (inject env vars at build time)
         working-directory: ./frontend
         env:
           VITE_BACKEND_URL: ${{ secrets.VITE_BACKEND_URL }}
           VITE_CURRENCY: ${{ secrets.VITE_CURRENCY }}
         run: npm run build
 
-      # 5. Deploy built files to Cloudflare Pages
-      - name: ☁️ Deploy to Cloudflare Pages
+      - name: ☁️ Deploy → Cloudflare Pages
         uses: cloudflare/pages-action@v1
         with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: dockrx-frontend           # ← Must match your Pages project name
-          directory: frontend/dist               # ← Vite build output folder
+          apiToken:    ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId:   ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: dockrx-frontend        # ← must match your Pages project name
+          directory:   frontend/dist
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
 
-      # 6. Print success summary
-      - name: ✅ Frontend deployed
-        run: |
-          echo "========================================"
-          echo "  ✅ Patient frontend deployed!"
-          echo "  🔗 https://dockrx-frontend.pages.dev"
-          echo "========================================"
+      - name: ✅ Done
+        run: echo "Frontend → https://dockrx-frontend.pages.dev"
 
 
-  # ═══════════════════════════════════════════════════════════════════
-  # JOB 2 — DEPLOY ADMIN PANEL TO CLOUDFLARE PAGES
-  # ═══════════════════════════════════════════════════════════════════
+  # ═══════════════════════════════════════════════════════════════
+  # JOB 2 — ADMIN PANEL → CLOUDFLARE PAGES
+  # ═══════════════════════════════════════════════════════════════
   deploy-admin:
     name: 🔐 Admin Panel → Cloudflare Pages
     runs-on: ubuntu-latest
@@ -98,7 +83,7 @@ jobs:
       github.event.inputs.deploy_target == 'admin'
 
     steps:
-      - name: ⬇️ Checkout repository
+      - name: ⬇️ Checkout code
         uses: actions/checkout@v4
 
       - name: 🟢 Setup Node.js 20
@@ -112,35 +97,31 @@ jobs:
         working-directory: ./admin
         run: npm ci
 
-      - name: 🔨 Build admin panel
+      - name: 🔨 Build (inject env vars at build time)
         working-directory: ./admin
         env:
           VITE_BACKEND_URL: ${{ secrets.VITE_BACKEND_URL }}
           VITE_CURRENCY: ${{ secrets.VITE_CURRENCY }}
         run: npm run build
 
-      - name: ☁️ Deploy to Cloudflare Pages
+      - name: ☁️ Deploy → Cloudflare Pages
         uses: cloudflare/pages-action@v1
         with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: dockrx-admin              # ← Must match your Pages project name
-          directory: admin/dist                  # ← Vite build output folder
+          apiToken:    ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId:   ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: dockrx-admin           # ← must match your Pages project name
+          directory:   admin/dist
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: ✅ Admin panel deployed
-        run: |
-          echo "========================================"
-          echo "  ✅ Admin panel deployed!"
-          echo "  🔗 https://dockrx-admin.pages.dev"
-          echo "========================================"
+      - name: ✅ Done
+        run: echo "Admin → https://dockrx-admin.pages.dev"
 
 
-  # ═══════════════════════════════════════════════════════════════════
-  # JOB 3 — TRIGGER RAILWAY BACKEND REDEPLOY
-  # ═══════════════════════════════════════════════════════════════════
+  # ═══════════════════════════════════════════════════════════════
+  # JOB 3 — BACKEND → CLOUDFLARE WORKERS
+  # ═══════════════════════════════════════════════════════════════
   deploy-backend:
-    name: ⚙️ Backend → Railway
+    name: ⚙️ Backend → Cloudflare Workers
     runs-on: ubuntu-latest
     if: >
       github.event_name == 'push' ||
@@ -148,52 +129,75 @@ jobs:
       github.event.inputs.deploy_target == 'backend'
 
     steps:
-      - name: ⬇️ Checkout repository
+      - name: ⬇️ Checkout code
         uses: actions/checkout@v4
 
-      # Railway watches GitHub and auto-deploys on push.
-      # This step also explicitly pings the Railway deploy webhook
-      # for cases where you trigger from workflow_dispatch.
-      - name: 🚂 Trigger Railway deploy webhook
-        run: |
-          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-            -X POST "${{ secrets.RAILWAY_WEBHOOK_URL }}")
-          if [ "$HTTP_STATUS" = "200" ] || [ "$HTTP_STATUS" = "202" ]; then
-            echo "✅ Railway webhook triggered (HTTP $HTTP_STATUS)"
-          else
-            echo "⚠️  Railway webhook returned HTTP $HTTP_STATUS"
-            echo "   Railway may still auto-deploy via GitHub integration."
-          fi
+      - name: 🟢 Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
 
-      - name: ✅ Backend deploy triggered
-        run: |
-          echo "========================================"
-          echo "  ✅ Backend redeploy triggered!"
-          echo "  🔗 https://dockrx-production.up.railway.app"
-          echo "========================================"
+      - name: 📦 Install dependencies
+        working-directory: ./backend
+        run: npm ci
+
+      # Deploy the Express app to Cloudflare Workers via Wrangler
+      - name: ☁️ Deploy → Cloudflare Workers
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken:   ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId:  ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: backend
+          command: deploy
+
+      # Push all backend secrets to the Worker (runs after deploy)
+      - name: 🔐 Push secrets to Worker
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken:   ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId:  ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: backend
+          command: |
+            secret put MONGODB_URI <<< "${{ secrets.MONGODB_URI }}"
+            secret put JWT_SECRET <<< "${{ secrets.JWT_SECRET }}"
+            secret put ADMIN_EMAIL <<< "${{ secrets.ADMIN_EMAIL }}"
+            secret put ADMIN_PASSWORD <<< "${{ secrets.ADMIN_PASSWORD }}"
+            secret put CLOUDINARY_NAME <<< "${{ secrets.CLOUDINARY_NAME }}"
+            secret put CLOUDINARY_API_KEY <<< "${{ secrets.CLOUDINARY_API_KEY }}"
+            secret put CLOUDINARY_SECRET_KEY <<< "${{ secrets.CLOUDINARY_SECRET_KEY }}"
+            secret put RAZORPAY_KEY_ID <<< "${{ secrets.RAZORPAY_KEY_ID }}"
+            secret put RAZORPAY_KEY_SECRET <<< "${{ secrets.RAZORPAY_KEY_SECRET }}"
+            secret put STRIPE_SECRET_KEY <<< "${{ secrets.STRIPE_SECRET_KEY }}"
+            secret put FRONTEND_URL <<< "${{ secrets.FRONTEND_URL }}"
+            secret put ADMIN_URL <<< "${{ secrets.ADMIN_URL }}"
+
+      - name: ✅ Done
+        run: echo "Backend → https://dockrx-backend.YOUR_SUBDOMAIN.workers.dev"
 
 
-  # ═══════════════════════════════════════════════════════════════════
-  # JOB 4 — SUMMARY NOTIFICATION (runs after all three deploys)
-  # ═══════════════════════════════════════════════════════════════════
-  notify-success:
+  # ═══════════════════════════════════════════════════════════════
+  # JOB 4 — DEPLOYMENT SUMMARY
+  # ═══════════════════════════════════════════════════════════════
+  summary:
     name: 📢 Deployment Summary
     runs-on: ubuntu-latest
     needs: [deploy-frontend, deploy-admin, deploy-backend]
     if: always()
 
     steps:
-      - name: 📋 Print deployment summary
+      - name: 📋 Print summary
         run: |
           echo ""
-          echo "╔══════════════════════════════════════════════╗"
-          echo "║       🏥  DockRx Deployment Summary          ║"
-          echo "╠══════════════════════════════════════════════╣"
-          echo "║  Commit : ${{ github.sha }}"
-          echo "║  Branch : ${{ github.ref_name }}"
-          echo "║  Author : ${{ github.actor }}"
-          echo "╠══════════════════════════════════════════════╣"
-          echo "║  🌐 Frontend  → dockrx-frontend.pages.dev   ║"
-          echo "║  🔐 Admin     → dockrx-admin.pages.dev      ║"
-          echo "║  ⚙️  Backend   → railway.app                 ║"
-          echo "╚══════════════════════════════════════════════╝"
+          echo "╔══════════════════════════════════════════════════╗"
+          echo "║         🏥  DockRx Deployment Complete           ║"
+          echo "╠══════════════════════════════════════════════════╣"
+          echo "║  Platform : ☁️  100% Cloudflare                  ║"
+          echo "║  Commit   : ${{ github.sha }}"
+          echo "║  Author   : ${{ github.actor }}"
+          echo "╠══════════════════════════════════════════════════╣"
+          echo "║  🌐 Frontend → dockrx-frontend.pages.dev         ║"
+          echo "║  🔐 Admin    → dockrx-admin.pages.dev            ║"
+          echo "║  ⚙️  Backend  → dockrx-backend.workers.dev        ║"
+          echo "╚══════════════════════════════════════════════════╝"

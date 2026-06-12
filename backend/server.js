@@ -15,7 +15,20 @@ connectCloudinary()
 
 // middlewares
 app.use(express.json())
-app.use(cors())
+app.use(cors({
+  origin: [
+    'https://dockrx-admin.vercel.app',
+    'https://dockrx-frontend.vercel.app',
+    'http://localhost:5173',
+    'http://localhost:5174'
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'token', 'atoken', 'dtoken']
+}))
+
+// Handle preflight
+app.options('*', cors())
 
 // api endpoints
 app.use("/api/user", userRouter)

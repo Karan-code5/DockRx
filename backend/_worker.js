@@ -1,26 +1,39 @@
 import express from 'express'
 import cors from 'cors'
 import connectDB from './config/mongodb.js'
-import connectCloudinary from './config/cloudinary.js'
 import userRouter from './routes/userRoute.js'
 import doctorRouter from './routes/doctorRoute.js'
 import adminRouter from './routes/adminRoute.js'
+import imageRouter from './routes/imageRoute.js'
 
 const app = express()
 
 app.use(express.json())
 app.use(cors({
-  origin: [
-    process.env.FRONTEND_URL,
-    process.env.ADMIN_URL,
-    'http://localhost:5173',
-    'http://localhost:5174',
-  ].filter(Boolean)
+  origin(origin, callback) {
+    const allowedOrigins = [
+      process.env.FRONTEND_URL,
+      process.env.ADMIN_URL,
+      'http://localhost:5173',
+      'http://localhost:5174',
+    ].filter(Boolean)
+
+    callback(null, !origin || allowedOrigins.includes(origin))
+  }
 }))
+
+// Middleware to attach Cloudflare env bindings (KV, etc.) to every request
+app.use((req, _res, next) => {
+  if (globalThis.__cfEnv) {
+    req.cfEnv = globalThis.__cfEnv
+  }
+  next()
+})
 
 app.use('/api/user',   userRouter)
 app.use('/api/admin',  adminRouter)
 app.use('/api/doctor', doctorRouter)
+app.use('/api/images', imageRouter)
 
 app.get('/', (_req, res) => res.send('DockRx API Working'))
 
@@ -28,15 +41,20 @@ let started = false
 
 export default {
   async fetch(request, env, ctx) {
-    // Copy Cloudflare secrets into process.env
+    // Store complex Cloudflare bindings (KV, etc.) globally
+    // so Express middleware can access them via req.cfEnv
+    globalThis.__cfEnv = env
+
+    // Copy string-valued secrets into process.env
     for (const [key, value] of Object.entries(env)) {
-      process.env[key] = value
+      if (typeof value === 'string') {
+        process.env[key] = value
+      }
     }
 
     // Connect to MongoDB once
     if (!started) {
       await connectDB()
-      connectCloudinary()
       started = true
     }
 

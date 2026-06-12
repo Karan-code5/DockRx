@@ -3,9 +3,9 @@ import appointmentModel from "../models/appointmentModel.js";
 import doctorModel from "../models/doctorModel.js";
 import bcrypt from "bcryptjs";
 import validator from "validator";
-import { v2 as cloudinary } from "cloudinary";
 import userModel from "../models/userModel.js";
 import mongoose from "mongoose";
+import { storeImage } from "../utils/imageStorage.js";
 
 // API for admin login
 const loginAdmin = async (req, res) => {
@@ -72,7 +72,7 @@ const addDoctor = async (req, res) => {
         }
 
         // checking for all data to add doctor
-        if (!name || !email || !password || !speciality || !degree || !experience || !about || !fees || !address) {
+        if (!name || !email || !password || !speciality || !degree || !experience || !about || !fees || !address || !imageFile) {
             return res.json({ success: false, message: "Missing Details" })
         }
 
@@ -90,14 +90,12 @@ const addDoctor = async (req, res) => {
         const salt = await bcrypt.genSalt(10); // the more no. round the more time it will take
         const hashedPassword = await bcrypt.hash(password, salt)
 
-        // upload image to cloudinary
         let imageUrl;
         try {
-            const imageUpload = await cloudinary.uploader.upload(imageFile.path, { resource_type: "image" })
-            imageUrl = imageUpload.secure_url
-        } catch (cloudinaryError) {
-            console.error("Cloudinary Upload Error:", cloudinaryError)
-            return res.json({ success: false, message: "Cloudinary upload failed. Check your internet or Cloudinary config." })
+            imageUrl = await storeImage(req, imageFile, 'doctor')
+        } catch (kvError) {
+            console.error("KV Upload Error:", kvError)
+            return res.json({ success: false, message: "Image upload failed. Check your KV namespace config." })
         }
 
         const doctorData = {

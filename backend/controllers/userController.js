@@ -4,16 +4,39 @@ import validator from "validator";
 import userModel from "../models/userModel.js";
 import doctorModel from "../models/doctorModel.js";
 import appointmentModel from "../models/appointmentModel.js";
-import { v2 as cloudinary } from 'cloudinary'
+
 import stripe from "stripe";
 import razorpay from 'razorpay';
+import { storeImage } from "../utils/imageStorage.js";
 
-// Gateway Initialize
-const stripeInstance = new stripe(process.env.STRIPE_SECRET_KEY)
-const razorpayInstance = new razorpay({
-    key_id: process.env.RAZORPAY_KEY_ID,
-    key_secret: process.env.RAZORPAY_KEY_SECRET,
-})
+let stripeInstance
+let razorpayInstance
+
+const getStripeInstance = () => {
+    if (!process.env.STRIPE_SECRET_KEY) {
+        throw new Error('STRIPE_SECRET_KEY is not configured')
+    }
+    stripeInstance ||= new stripe(process.env.STRIPE_SECRET_KEY)
+    return stripeInstance
+}
+
+const getRazorpayInstance = () => {
+    if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+        throw new Error('RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET are not configured')
+    }
+    razorpayInstance ||= new razorpay({
+        key_id: process.env.RAZORPAY_KEY_ID,
+        key_secret: process.env.RAZORPAY_KEY_SECRET,
+    })
+    return razorpayInstance
+}
+
+const getCurrency = () => {
+    if (!process.env.CURRENCY) {
+        throw new Error('CURRENCY is not configured')
+    }
+    return process.env.CURRENCY
+}
 
 // API to register user
 const registerUser = async (req, res) => {
@@ -115,9 +138,7 @@ const updateProfile = async (req, res) => {
 
         if (imageFile) {
 
-            // upload image to cloudinary
-            const imageUpload = await cloudinary.uploader.upload(imageFile.path, { resource_type: "image" })
-            const imageURL = imageUpload.secure_url
+            const imageURL = await storeImage(req, imageFile, 'user')
 
             await userModel.findByIdAndUpdate(userId, { image: imageURL })
         }
@@ -249,12 +270,12 @@ const paymentRazorpay = async (req, res) => {
         // creating options for razorpay payment
         const options = {
             amount: appointmentData.amount * 100,
-            currency: process.env.CURRENCY,
+            currency: getCurrency(),
             receipt: appointmentId,
         }
 
         // creation of an order
-        const order = await razorpayInstance.orders.create(options)
+        const order = await getRazorpayInstance().orders.create(options)
 
         res.json({ success: true, order })
 
@@ -268,7 +289,7 @@ const paymentRazorpay = async (req, res) => {
 const verifyRazorpay = async (req, res) => {
     try {
         const { razorpay_order_id } = req.body
-        const orderInfo = await razorpayInstance.orders.fetch(razorpay_order_id)
+        const orderInfo = await getRazorpayInstance().orders.fetch(razorpay_order_id)
 
         if (orderInfo.status === 'paid') {
             await appointmentModel.findByIdAndUpdate(orderInfo.receipt, { payment: true })
@@ -296,7 +317,7 @@ const paymentStripe = async (req, res) => {
             return res.json({ success: false, message: 'Appointment Cancelled or not found' })
         }
 
-        const currency = process.env.CURRENCY.toLocaleLowerCase()
+        const currency = getCurrency().toLocaleLowerCase()
 
         const line_items = [{
             price_data: {
@@ -309,7 +330,7 @@ const paymentStripe = async (req, res) => {
             quantity: 1
         }]
 
-        const session = await stripeInstance.checkout.sessions.create({
+        const session = await getStripeInstance().checkout.sessions.create({
             success_url: `${origin}/verify?success=true&appointmentId=${appointmentData._id}`,
             cancel_url: `${origin}/verify?success=false&appointmentId=${appointmentData._id}`,
             line_items: line_items,

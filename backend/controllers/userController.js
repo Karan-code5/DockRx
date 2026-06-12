@@ -4,10 +4,10 @@ import validator from "validator";
 import userModel from "../models/userModel.js";
 import doctorModel from "../models/doctorModel.js";
 import appointmentModel from "../models/appointmentModel.js";
+import { v2 as cloudinary } from 'cloudinary'
 
 import stripe from "stripe";
 import razorpay from 'razorpay';
-import { storeImage } from "../utils/imageStorage.js";
 
 let stripeInstance
 let razorpayInstance
@@ -138,7 +138,8 @@ const updateProfile = async (req, res) => {
 
         if (imageFile) {
 
-            const imageURL = await storeImage(req, imageFile, 'user')
+            const imageUpload = await cloudinary.uploader.upload(imageFile.path, { resource_type: "image" })
+            const imageURL = imageUpload.secure_url
 
             await userModel.findByIdAndUpdate(userId, { image: imageURL })
         }

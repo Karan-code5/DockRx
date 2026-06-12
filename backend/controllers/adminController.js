@@ -5,7 +5,7 @@ import bcrypt from "bcryptjs";
 import validator from "validator";
 import userModel from "../models/userModel.js";
 import mongoose from "mongoose";
-import { storeImage } from "../utils/imageStorage.js";
+import { v2 as cloudinary } from "cloudinary";
 
 // API for admin login
 const loginAdmin = async (req, res) => {
@@ -92,10 +92,11 @@ const addDoctor = async (req, res) => {
 
         let imageUrl;
         try {
-            imageUrl = await storeImage(req, imageFile, 'doctor')
-        } catch (kvError) {
-            console.error("KV Upload Error:", kvError)
-            return res.json({ success: false, message: "Image upload failed. Check your KV namespace config." })
+            const imageUpload = await cloudinary.uploader.upload(imageFile.path, { resource_type: "image" })
+            imageUrl = imageUpload.secure_url
+        } catch (cloudinaryError) {
+            console.error("Cloudinary Upload Error:", cloudinaryError)
+            return res.json({ success: false, message: "Image upload failed. Check your Cloudinary config." })
         }
 
         const doctorData = {

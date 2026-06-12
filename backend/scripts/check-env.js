@@ -4,9 +4,9 @@ const required = [
     'ADMIN_EMAIL',
     'ADMIN_PASSWORD',
     'CURRENCY',
-    'RAZORPAY_KEY_ID',
-    'RAZORPAY_KEY_SECRET',
-    'STRIPE_SECRET_KEY',
+    'CLOUDINARY_NAME',
+    'CLOUDINARY_API_KEY',
+    'CLOUDINARY_SECRET_KEY',
     'FRONTEND_URL',
     'ADMIN_URL',
 ]

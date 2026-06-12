@@ -3,6 +3,7 @@ import React, { useContext, useState } from 'react'
 import { DoctorContext } from '../context/DoctorContext'
 import { AdminContext } from '../context/AdminContext'
 import { toast } from 'react-toastify'
+import { backendUrl } from '../config'
 
 const Login = () => {
 
@@ -10,8 +11,6 @@ const Login = () => {
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-
-  const backendUrl = import.meta.env.VITE_BACKEND_URL
 
   const { setDToken } = useContext(DoctorContext)
   const { setAToken } = useContext(AdminContext)
